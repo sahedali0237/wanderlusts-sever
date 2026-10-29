@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import { requireAuth } from "./middleware/auth.js";
+import { auth } from "./src/lib/auth.ts";
+import { toNextJsHandler } from "better-auth/integrations/next-js";
 
 const app = express();
 
@@ -224,7 +226,7 @@ app.get("/my-booking/:email", requireAuth, async (req, res) => {
 
     const result = await collection.find({ "user.email": authEmail }).toArray();
 
-    res.status(200).json(result);
+    res.status(200).json({ bookings: result });
   } catch (error) {
     console.error("Error fetching bookings:", error);
     res.status(500).json({ message: "Failed to fetch bookings" });
@@ -278,6 +280,30 @@ app.delete("/booking/:id", requireAuth, async (req, res) => {
       message: "Failed to delete booking",
       error: error.message,
     });
+  }
+});
+
+// Auth routes via better-auth /api/auth/[...all]
+const authHandler = toNextJsHandler(auth);
+app.all("/api/auth/*", async (req, res) => {
+  try {
+    const url = new URL(req.originalUrl || req.url, `http://${req.headers.host || "localhost"}`);
+    const method = req.method.toLowerCase();
+    const request = new Request(url, {
+      method: req.method,
+      headers: new Headers(req.headers),
+      body: ["get", "head"].includes(req.method.toLowerCase()) ? undefined : JSON.stringify(req.body),
+    });
+
+    const handler = authHandler[method] || authHandler.get || authHandler.post;
+    if (!handler) return res.status(404).json({ message: "Not found" });
+
+    const response = await handler(request);
+    const responseBody = response.body ? await response.json() : null;
+    res.status(response.status).json(responseBody);
+  } catch (error) {
+    console.error("Auth route error:", error);
+    res.status(500).json({ error: "Auth route error" });
   }
 });
 
