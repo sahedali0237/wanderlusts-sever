@@ -4,7 +4,7 @@ import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import { requireAuth } from "./middleware/auth.js";
 import { auth } from "./src/lib/auth.js";
-import { toNextJsHandler } from "better-auth/integrations/next-js";
+import { toNextJsHandler } from "better-auth/next-js";
 
 const app = express();
 
@@ -285,7 +285,7 @@ app.delete("/booking/:id", requireAuth, async (req, res) => {
 
 // Auth routes via better-auth /api/auth/[...all]
 const authHandler = toNextJsHandler(auth);
-app.all("/api/auth/*", async (req, res) => {
+app.all("/api/auth/*path", async (req, res) => {
   try {
     const url = new URL(req.originalUrl || req.url, `http://${req.headers.host || "localhost"}`);
     const method = req.method.toLowerCase();
