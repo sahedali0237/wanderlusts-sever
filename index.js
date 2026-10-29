@@ -3,7 +3,7 @@ import express from "express";
 import cors from "cors";
 import { MongoClient, ObjectId } from "mongodb";
 import { requireAuth } from "./middleware/auth.js";
-import { auth } from "./src/lib/auth.ts";
+import { auth } from "./src/lib/auth.js";
 import { toNextJsHandler } from "better-auth/integrations/next-js";
 
 const app = express();

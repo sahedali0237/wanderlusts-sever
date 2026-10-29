@@ -17,5 +17,8 @@
     "jose": "^6.2.13",
     "mongodb": "^7.7.0",
     "nodemon": "^3.1.14"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6"
   }
 }
