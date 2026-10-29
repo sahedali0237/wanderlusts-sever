@@ -1,7 +1,17 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
-const JWKS_URI = process.env.JWKS_URI;
-const JWKS = createRemoteJWKSet(new URL(JWKS_URI));
+let JWKS = null;
+
+function getJWKS() {
+  if (!JWKS) {
+    const JWKS_URI = process.env.JWKS_URI;
+    if (!JWKS_URI) {
+      throw new Error("Missing JWKS_URI environment variable");
+    }
+    JWKS = createRemoteJWKSet(new URL(JWKS_URI));
+  }
+  return JWKS;
+}
 
 function extractToken(authHeader) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -18,7 +28,7 @@ export async function requireAuth(req, res, next) {
         .status(401)
         .json({ error: "Missing or invalid Authorization header" });
     }
-    const { payload } = await jwtVerify(token, JWKS);
+    const { payload } = await jwtVerify(token, getJWKS());
     req.user = {
       id: payload.sub,
       email: payload.email,
@@ -40,7 +50,7 @@ export async function optionalAuth(req, res, next) {
   try {
     const token = extractToken(req.headers.authorization);
     if (!token) return next();
-    const { payload } = await jwtVerify(token, JWKS);
+    const { payload } = await jwtVerify(token, getJWKS());
     req.user = {
       id: payload.sub,
       email: payload.email,
